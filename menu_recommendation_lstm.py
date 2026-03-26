@@ -45,7 +45,6 @@ Thu D 19 치킨 치킨
 '''
 
 a = menu.split()
-print(a)
 
 without_spec = []
 
@@ -65,13 +64,10 @@ for i, word in enumerate(without_spec):
             devided.append(without_spec[i-11:i])
             label.append(without_spec[i])
 
-print(devided)
-print(label)
 
 words_count = Counter(without_spec)
 vocab = sorted(words_count, key = words_count.get, reverse = True)
 
-print(vocab)
 
 word2idx = {}
 
@@ -81,7 +77,6 @@ word2idx['<unk>'] = 1
 for index, word in enumerate(vocab):
   word2idx[str(word)] = int(index+2)
 
-print(word2idx)
 
 converted2idx = []
 label2idx = []
@@ -95,12 +90,9 @@ for chunk in devided:
 for word in label:
     label2idx.append(word2idx[word])
 
-print(converted2idx)
-print(label2idx)
 
 idx2label = {v: k for k, v in word2idx.items()}
 
-print(idx2label)
 
 class POSTagger2(nn.Module):
   def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, num_layers):
@@ -200,7 +192,7 @@ model.load_state_dict(torch.load('best_model_checkpoint.pth'))
 # 모델을 device에 올립니다.
 model.to(device)
 
-user_input = str(input('Date L/D Hour Menu x2 + Date L/D Hour: '))
+user_input = str(input('Date L/D Hour Type x2 + Date L/D Hour: '))
 
 tokenized = user_input.split()
 
