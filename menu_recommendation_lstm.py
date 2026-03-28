@@ -42,6 +42,9 @@ Wed L 14 머그 간식
 Wed D 18 중국집 중식
 Thu L 13 짜글이 한식
 Thu D 19 치킨 치킨
+Thu N 22 딸기스무디 간식
+Fri L 14 육회비빔밥 한식
+Fri D 22 피자 피자
 '''
 
 a = menu.split()
