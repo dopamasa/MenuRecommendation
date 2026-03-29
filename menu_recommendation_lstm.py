@@ -45,6 +45,10 @@ Thu D 19 치킨 치킨
 Thu N 22 딸기스무디 간식
 Fri L 14 육회비빔밥 한식
 Fri D 22 피자 피자
+Sat L 15 김치찜 한식
+Sat D 21 치킨 치킨
+Sat N 22 딸쿠스 간식
+Sun L 14 불닭 분식
 '''
 
 a = menu.split()
