@@ -56,6 +56,7 @@ Tue L 12 머그 간식
 Tue D 17 롯데리아 간식
 Tue N 22 핫도그 간식
 Wed L 12 더랩 간식
+Wed D 20 불닭 분식
 '''
 
 a = menu.split()
