@@ -112,25 +112,14 @@ class POSTagger2(nn.Module):
   def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, num_layers):
     super(POSTagger2, self).__init__()
     self.embedding = nn.Embedding(vocab_size, embedding_dim)
-    # bidirectional=False, so the output will not be concatenated
     self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers=num_layers, batch_first=True, bidirectional=False)
-    self.fc = nn.Linear(hidden_dim, output_dim) # Linear layer expects hidden_dim from non-bidirectional LSTM
+    self.fc = nn.Linear(hidden_dim, output_dim)
 
   def forward(self, x):
-    # x: (batch_size, seq_length)
-    embedded = self.embedding(x)  # (batch_size, seq_length, embedding_dim)
-
-    # We only need the final hidden states for sequence classification
-    # lstm_out is (batch_size, seq_length, hidden_dim)
-    # h_n is (num_layers, batch_size, hidden_dim)
-    # c_n is (num_layers, batch_size, hidden_dim)
+    embedded = self.embedding(x)
     _, (h_n, _) = self.lstm(embedded)
-
-    # For a non-bidirectional LSTM, the final hidden state h_n from the last layer
-    # (h_n[-1, :, :]) represents the context of the entire sequence.
-    final_hidden_state = h_n[-1, :, :] # Shape: (batch_size, hidden_dim)
-
-    logits = self.fc(final_hidden_state)  # Shape: (batch_size, output_dim)
+    final_hidden_state = h_n[-1, :, :]
+    logits = self.fc(final_hidden_state)
     return logits
 
 X_train_tensor = torch.tensor(converted2idx, dtype=torch.long)
@@ -186,7 +175,6 @@ for epoch in range(num_epochs):
     optimizer.step()
 
     train_loss += loss.item()
-    #미리 만들어 놓은 accuracy 함수를 이용해 correct prediction의 개수를 셈
     train_correct += accuracy(logits.view(-1, output_dim), batch_y.view(-1)) * batch_y.size(0)
     train_total += batch_y.size(0)
 
@@ -203,7 +191,6 @@ for epoch in range(num_epochs):
 
 model.load_state_dict(torch.load('best_model_checkpoint.pth'))
 
-# 모델을 device에 올립니다.
 model.to(device)
 
 user_input = str(input('Date L/D Hour Type x2 + Date L/D Hour: '))
@@ -218,17 +205,14 @@ for word in tokenized:
   except KeyError:
     indexed_input_list.append(word2idx['<unk>'])
 
-# Add an explicit batch dimension to the input tensor
 padded_tensor = torch.tensor(indexed_input_list, dtype=torch.long).unsqueeze(0)
 
 with torch.no_grad():
   padded_tensor = padded_tensor.to(device)
   user_logits = model(padded_tensor)
 
-# Now user_logits will have shape (1, output_dim), so dim=1 is correct for argmax
 user_predicted = torch.argmax(user_logits, dim=1).squeeze().cpu().numpy()
 
-# Fix: Extract the scalar value from the 0-d array using .item() before using it as a key
 to_label = [idx2label[user_predicted.item()]]
 
 print(to_label)
