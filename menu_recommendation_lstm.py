@@ -18,7 +18,7 @@ with open('menu.txt', 'r', encoding='utf-8') as f:
 
 class PreprocessMenu():
     def __init__(self, menu):
-        a = menu.split()
+        a = menu.strip().split()
 
         without_spec = []
 
