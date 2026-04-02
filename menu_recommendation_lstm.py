@@ -13,7 +13,7 @@ import torch
 import numpy as np
 import torch.optim as optim
 
-with open('menu.txt', 'r') as f:
+with open('menu.txt', 'r', encoding='utf-8') as f:
     menu = f.read()
 
 class PreprocessMenu():
