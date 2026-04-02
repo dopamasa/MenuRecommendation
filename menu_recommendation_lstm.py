@@ -59,6 +59,7 @@ Wed L 12 더랩 간식
 Wed D 20 불닭 분식
 Thu L 13 돈까스 일식
 Thu D 21 떡볶이 분식
+Thu N 24 햄버거 햄버거
 '''
 
 class PreprocessMenu():
@@ -121,19 +122,19 @@ class PreprocessMenu():
         self.menu = train_dataloader
         self.word2idx = word2idx
         self.idx2word = idx2word
-    
+
     @property
     def menu(self):
         return self.__menu
-    
+
     @property
     def word2idx(self):
         return self.__word2idx
-    
+
     @property
     def idx2word(self):
         return self.__idx2word
-    
+
     @menu.setter
     def menu(self, train_dataloader):
         self.__menu = train_dataloader
@@ -141,14 +142,14 @@ class PreprocessMenu():
     @word2idx.setter
     def word2idx(self, word2idx):
         self.__word2idx = word2idx
-    
+
     @idx2word.setter
     def idx2word(self, idx2word):
         self.__idx2word = idx2word
 
 
-data = PreprocessMenu(menu)
 
+data = PreprocessMenu(menu)
 
 class MenuRecommend(nn.Module):
     def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, num_layers):
@@ -164,103 +165,125 @@ class MenuRecommend(nn.Module):
         logits = self.fc(final_hidden_state)
         return logits
 
+class ModelTraining(MenuRecommend):
+    def __init__(self, data):
 
-embedding_dim = 16
-hidden_dim = 32
-output_dim = len(data.word2idx)
-learning_rate = 0.2
-num_epochs = 300
-num_layers = 2
-vocab_size = len(data.word2idx)
+        embedding_dim = 16
+        hidden_dim = 32
+        output_dim = len(data.word2idx)
+        learning_rate = 0.2
+        num_epochs = 300
+        num_layers = 2
+        vocab_size = len(data.word2idx)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(device)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(device)
 
-model = MenuRecommend(vocab_size, embedding_dim, hidden_dim, output_dim, num_layers)
-model.to(device)
+        super().__init__(vocab_size, embedding_dim, hidden_dim, output_dim, num_layers)
+        self.to(device)
 
-criterion = nn.CrossEntropyLoss(ignore_index=0)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        criterion = nn.CrossEntropyLoss(ignore_index=0)
+        optimizer = optim.Adam(self.parameters(), lr=learning_rate)
 
-def accuracy(logits, labels, ignore_index=0):
-    predicted = torch.argmax(logits, dim=1)
-    correct = (predicted == labels).sum().item()
-    total = len(labels)
+        def accuracy(logits, labels, ignore_index=0):
+            predicted = torch.argmax(logits, dim=1)
+            correct = (predicted == labels).sum().item()
+            total = len(labels)
 
-    accuracy = correct/total
+            accuracy = correct/total
 
-    return accuracy
+            return accuracy
 
-best_train_loss = float('inf')
+        best_train_loss = float('inf')
 
-while True:
+        while True:
 
-    for epoch in range(num_epochs):
+            for epoch in range(num_epochs):
 
-        train_loss = 0
-        train_correct = 0
-        train_total = 0
+                train_loss = 0
+                train_correct = 0
+                train_total = 0
 
-        model.train()
+                self.train()
 
-        for batch_X, batch_y in data.menu:
-            batch_X, batch_y = batch_X.to(device), batch_y.to(device)
-            logits = model(batch_X)
+                for batch_X, batch_y in data.menu:
+                    batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+                    logits = self(batch_X)
 
-        loss = criterion(logits.view(-1, output_dim), batch_y.view(-1))
+                loss = criterion(logits.view(-1, output_dim), batch_y.view(-1))
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-        train_loss += loss.item()
-        train_correct += accuracy(logits.view(-1, output_dim), batch_y.view(-1)) * batch_y.size(0)
-        train_total += batch_y.size(0)
+                train_loss += loss.item()
+                train_correct += accuracy(logits.view(-1, output_dim), batch_y.view(-1)) * batch_y.size(0)
+                train_total += batch_y.size(0)
 
-        train_accuracy = train_correct / train_total
-        train_loss /= len(data.menu)
+                train_accuracy = train_correct / train_total
+                train_loss /= len(data.menu)
 
-        if epoch % 50 ==49:
-            print(f'Epoch {epoch+1}\nloss: {train_loss}, accuracy: {train_accuracy}')
+                if epoch % 50 ==49:
+                    print(f'Epoch {epoch+1}\nloss: {train_loss}, accuracy: {train_accuracy}')
 
-            if train_loss < best_train_loss:
-                print(f'Train loss improved from {best_train_loss:.4f} to {train_loss:.4f}. 체크포인트를 저장합니다.')
-                best_train_loss = train_loss
-                torch.save(model.state_dict(), 'best_model_checkpoint.pth')
+                    if train_loss < best_train_loss:
+                        print(f'Train loss improved from {best_train_loss:.4f} to {train_loss:.4f}. 체크포인트를 저장합니다.')
+                        best_train_loss = train_loss
+                        torch.save(self.state_dict(), 'best_model_checkpoint.pth')
 
-    if best_train_loss < 1:
-        print('Have a good meal')
-        break
+            if best_train_loss < 1:
+                break
 
-while True:
+        self.device = device
 
-    model.load_state_dict(torch.load('best_model_checkpoint.pth'))
+    @property
+    def device(self):
+        return self.__device
 
-    model.to(device)
+    @device.setter
+    def device(self, device):
+        self.__device = device
 
-    user_input = str(input("Date L/D Hour Type x2 + Date L/D Hour (enter 'quit' to quit): "))
+trained = ModelTraining(data)
 
-    if user_input == 'quit':
-        break
+class ModelPrediction():
+    def __init__(self, trained, data):
 
-    tokenized = user_input.split()
+        self.model = trained
+        self.data = data
+        
+        self.model.load_state_dict(torch.load('best_model_checkpoint.pth'))
+        self.model.to(self.model.device)
 
-    indexed_input_list = []
+        while True:
+            user_input = input("Date L/D Hour Type x2 + Date L/D Hour (enter 'quit' to quit): ")
 
-    for word in tokenized:
-        try:
-            indexed_input_list.append(data.word2idx[word])
-        except KeyError:
-            indexed_input_list.append(data.word2idx['<unk>'])
+            if user_input.lower() == 'quit':
+                print('Have a good meal!')
+                break
 
-    padded_tensor = torch.tensor(indexed_input_list, dtype=torch.long).unsqueeze(0)
+            tokenized = user_input.split()
+            indexed_input_list = []
 
-    with torch.no_grad():
-        padded_tensor = padded_tensor.to(device)
-        user_logits = model(padded_tensor)
+            for word in tokenized:
+                if word in self.data.word2idx:
+                    indexed_input_list.append(self.data.word2idx[word])
+                else:
+                    indexed_input_list.append(self.data.word2idx['<unk>'])
 
-    user_predicted = torch.argmax(user_logits, dim=1).squeeze().cpu().numpy()
+            if not indexed_input_list:
+                continue
 
-    to_label = [data.idx2word[user_predicted.item()]]
+            padded_tensor = torch.tensor(indexed_input_list, dtype=torch.long).unsqueeze(0)
 
-    print(to_label)
+            with torch.no_grad():
+                padded_tensor = padded_tensor.to(self.model.device)
+                user_logits = self.model(padded_tensor)
+
+            user_predicted = torch.argmax(user_logits, dim=1).item()
+            to_label = self.data.idx2word[user_predicted]
+
+            print(f"Recommended: {to_label}")
+
+
+prediction = ModelPrediction(trained, data)
