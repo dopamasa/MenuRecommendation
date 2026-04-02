@@ -121,7 +121,6 @@ class MenuRecommend(nn.Module):
 
 class ModelTraining(MenuRecommend):
     def __init__(self, data):
-
         embedding_dim = 16
         hidden_dim = 32
         output_dim = len(data.word2idx)
@@ -139,51 +138,41 @@ class ModelTraining(MenuRecommend):
         criterion = nn.CrossEntropyLoss(ignore_index=0)
         optimizer = optim.Adam(self.parameters(), lr=learning_rate)
 
-        def accuracy(logits, labels, ignore_index=0):
-            predicted = torch.argmax(logits, dim=1)
-            correct = (predicted == labels).sum().item()
-            total = len(labels)
-
-            accuracy = correct/total
-
-            return accuracy
-
         best_train_loss = float('inf')
 
         while True:
 
             for epoch in range(num_epochs):
-
-                train_loss = 0
-                train_correct = 0
-                train_total = 0
-
                 self.train()
+                epoch_loss = 0
+                epoch_correct = 0
+                total_samples = 0
 
                 for batch_X, batch_y in data.menu:
                     batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+                
+                    optimizer.zero_grad()
                     logits = self(batch_X)
+                    loss = criterion(logits, batch_y)
+                    loss.backward()
+                    optimizer.step()
 
-                loss = criterion(logits.view(-1, output_dim), batch_y.view(-1))
+                    epoch_loss += loss.item()
+                
+                    predicted = torch.argmax(logits, dim=1)
+                    epoch_correct += (predicted == batch_y).sum().item()
+                    total_samples += batch_y.size(0)
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+                avg_loss = epoch_loss / len(data.menu)
+                avg_accuracy = epoch_correct / total_samples
 
-                train_loss += loss.item()
-                train_correct += accuracy(logits.view(-1, output_dim), batch_y.view(-1)) * batch_y.size(0)
-                train_total += batch_y.size(0)
-
-                train_accuracy = train_correct / train_total
-                train_loss /= len(data.menu)
-
-                if epoch % 50 ==49:
-                    print(f'Epoch {epoch+1}\nloss: {train_loss}, accuracy: {train_accuracy}')
-
-                    if train_loss < best_train_loss:
-                        print(f'Train loss improved from {best_train_loss:.4f} to {train_loss:.4f}. 체크포인트를 저장합니다.')
-                        best_train_loss = train_loss
+                if (epoch + 1) % 50 == 0:
+                    print(f'Epoch {epoch+1} | Loss: {avg_loss:.4f} | Accuracy: {avg_accuracy:.4f}')
+                
+                    if avg_loss < best_train_loss:
+                        best_train_loss = avg_loss
                         torch.save(self.state_dict(), 'best_model_checkpoint.pth')
+                        print("Checkpoint saved.")
 
             if best_train_loss < 1:
                 break
