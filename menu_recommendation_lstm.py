@@ -13,54 +13,8 @@ import torch
 import numpy as np
 import torch.optim as optim
 
-menu = '''
-Fri L 12 빵 간식
-Fri D 19 돈까스 일식
-Sat L 13 고기 고기
-Sat D 25 치킨 치킨
-Sun L 12 감자탕 한식
-Sun D 20 햄버거 햄버거
-Mon L 12 삼김 간식
-Mon D 20 치킨 치킨
-Tue L 12 돈까스 일식
-Tue D 21 치킨 치킨
-Wed L X X X
-Wed D 18 고기 고기
-Thu L X X X
-Thu D 18 햄버거 햄버거
-Fri L 14 막국수 한식
-Fri D 21 라면 분식
-Sat L 14 칼국수 한식
-Sat D 20 휴게소 간식
-Sun L 14 라면 분식
-Sun D 22 사케동 일식
-Mon L 14 햄버거 햄버거
-Mon D 19 칼국수 한식
-Tue L 12 더랩 간식
-Tue D 17 치킨 치킨
-Wed L 14 머그 간식
-Wed D 18 중국집 중식
-Thu L 13 짜글이 한식
-Thu D 19 치킨 치킨
-Thu N 22 딸기스무디 간식
-Fri L 14 육회비빔밥 한식
-Fri D 22 피자 피자
-Sat L 15 김치찜 한식
-Sat D 21 치킨 치킨
-Sat N 22 딸쿠스 간식
-Sun L 14 불닭 분식
-Sun D 21 햄버거 햄버거
-Mon L 14 머그 간식
-Mon D 20 엽떡 분식
-Tue L 12 머그 간식
-Tue D 17 롯데리아 간식
-Tue N 22 핫도그 간식
-Wed L 12 더랩 간식
-Wed D 20 불닭 분식
-Thu L 13 돈까스 일식
-Thu D 21 떡볶이 분식
-Thu N 24 햄버거 햄버거
-'''
+with open('menu.txt', 'r') as f:
+    menu = f.read()
 
 class PreprocessMenu():
     def __init__(self, menu):
